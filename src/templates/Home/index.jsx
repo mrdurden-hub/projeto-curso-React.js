@@ -5,6 +5,7 @@ import './styles.css';
 import { Posts } from '../../components/Posts';
 import { loadPosts } from '../../utils/load-posts'
 import { Button } from '../../components/Button';
+import { TextInput } from '../../components/TextInput';
 
 
 class Home extends Component {
@@ -13,20 +14,21 @@ class Home extends Component {
     posts: [],
     allPosts: [],
     page: 0,
-    postsPerPage: 10
+    postsPerPage: 10,
+    searchValue: ""
   }
 
-  async componentDidMount(){
+  async componentDidMount() {
     await this.loadPosts()
   }
 
   loadPosts = async () => {
-    const { page, postsPerPage } =  this.state
+    const { page, postsPerPage } = this.state
 
     const postsAndPhotos = await loadPosts()
-    this.setState({ 
+    this.setState({
       posts: postsAndPhotos.slice(page, postsPerPage),
-      allPosts: postsAndPhotos 
+      allPosts: postsAndPhotos
     })
   }
 
@@ -45,24 +47,52 @@ class Home extends Component {
     this.setState({ posts, page: nextPage })
   }
 
+  handleChange = (e) => {
+    const { value } = e.target
+    this.setState({ searchValue: value })
+  }
+
   render() {
-    const { posts, page, postsPerPage, allPosts } = this.state;
+    const { posts, page, postsPerPage, allPosts, searchValue } = this.state;
     const noMorePosts = page + postsPerPage >= allPosts.length;
+
+    const filteredPosts = !!searchValue ? allPosts.filter(post => {
+      return post.title.toLowerCase().includes(
+        searchValue.toLocaleLowerCase()
+      )
+    }) : posts;
 
     return (
       <section className="container">
-        <Posts posts={posts} />
-        
+        <div className="search-container">
+          {!!searchValue && (
+            <h1>Search Value: {searchValue}</h1>
+          )}
+          <TextInput searchValue={searchValue} handleChange={this.handleChange} />
+        </div>
+
+        {filteredPosts.length >= 0 && (
+          <Posts posts={filteredPosts} />
+        )}
+
+        {filteredPosts.length === 0 && (
+          <p>Desculpe, mas não conseguimos encontrar nada relacionado.</p>
+        )}
+
+
         <div className="button-container">
-          <Button 
-          text={'Load more posts'} 
-          disabled={noMorePosts}
-          loadPostsFunction={this.loadMorePosts}
-          />
+          {!searchValue && (
+            <Button
+              text={'Load more posts'}
+              disabled={noMorePosts}
+              loadPostsFunction={this.loadMorePosts}
+            />
+          )}
+
         </div>
 
       </section>
-      
+
     );
   }
 }
