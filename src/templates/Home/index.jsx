@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 import './styles.css';
 
@@ -7,94 +7,79 @@ import { loadPosts } from '../../utils/load-posts'
 import { Button } from '../../components/Button';
 import { TextInput } from '../../components/TextInput';
 
+export const Home = () => {
 
-class Home extends Component {
-  // Nessa classe é usado Class field, por isso não tem construtor
-  state = {
-    posts: [],
-    allPosts: [],
-    page: 0,
-    postsPerPage: 10,
-    searchValue: ""
-  }
+  const [posts, setPosts] = useState([])
+  const [allPosts, setAllPosts] = useState([])
+  const [page, setPage] = useState(0)
+  const [postsPerPage, setPostsPerPage] = useState(10)
+  const [searchValue, setSearchValue] = useState('')
 
-  async componentDidMount() {
-    await this.loadPosts()
-  }
+  const noMorePosts = page + postsPerPage >= allPosts.length;
 
-  loadPosts = async () => {
-    const { page, postsPerPage } = this.state
+  const filteredPosts = !!searchValue ? allPosts.filter(post => {
+    return post.title.toLowerCase().includes(
+      searchValue.toLocaleLowerCase()
+    )
+  }) : posts;
 
+  const handleLoadPosts = useCallback(async (page, postsPerPage) => {
     const postsAndPhotos = await loadPosts()
-    this.setState({
-      posts: postsAndPhotos.slice(page, postsPerPage),
-      allPosts: postsAndPhotos
-    })
+
+    setPosts(postsAndPhotos.slice(page, postsPerPage))
+    setAllPosts(postsAndPhotos)
+  }, [])
+
+  useEffect(() => {
+    handleLoadPosts(0, postsPerPage)
+  }, [handleLoadPosts, postsPerPage])
+
+  const handleChange = (e) => {
+    const { value } = e.target
+    setSearchValue(value);
   }
 
-  loadMorePosts = () => {
-    const {
-      page,
-      postsPerPage,
-      allPosts,
-      posts
-    } = this.state
-
+  const loadMorePosts = () => {
     const nextPage = page + postsPerPage;
     const nextPosts = allPosts.slice(nextPage, nextPage + postsPerPage)
     posts.push(...nextPosts)
-
-    this.setState({ posts, page: nextPage })
+    
+    setPosts(posts)
+    setPage(nextPage)
   }
 
-  handleChange = (e) => {
-    const { value } = e.target
-    this.setState({ searchValue: value })
-  }
+  return (
+    <section className="container">
+      <div className="search-container">
+        {!!searchValue && (
+          <h1>Search Value: {searchValue}</h1>
+        )}
+        <TextInput searchValue={searchValue} handleChange={handleChange} />
+      </div>
 
-  render() {
-    const { posts, page, postsPerPage, allPosts, searchValue } = this.state;
-    const noMorePosts = page + postsPerPage >= allPosts.length;
+      {filteredPosts.length >= 0 && (
+        <Posts posts={filteredPosts} />
+      )}
 
-    const filteredPosts = !!searchValue ? allPosts.filter(post => {
-      return post.title.toLowerCase().includes(
-        searchValue.toLocaleLowerCase()
-      )
-    }) : posts;
+      {filteredPosts.length === 0 && (
+        <p>Desculpe, mas não conseguimos encontrar nada relacionado.</p>
+      )}
 
-    return (
-      <section className="container">
-        <div className="search-container">
-          {!!searchValue && (
-            <h1>Search Value: {searchValue}</h1>
-          )}
-          <TextInput searchValue={searchValue} handleChange={this.handleChange} />
-        </div>
 
-        {filteredPosts.length >= 0 && (
-          <Posts posts={filteredPosts} />
+      <div className="button-container">
+        {!searchValue && (
+          <Button
+            text={'Load more posts'}
+            disabled={noMorePosts}
+            loadPostsFunction={loadMorePosts}
+          />
         )}
 
-        {filteredPosts.length === 0 && (
-          <p>Desculpe, mas não conseguimos encontrar nada relacionado.</p>
-        )}
+      </div>
 
+    </section>
 
-        <div className="button-container">
-          {!searchValue && (
-            <Button
-              text={'Load more posts'}
-              disabled={noMorePosts}
-              loadPostsFunction={this.loadMorePosts}
-            />
-          )}
-
-        </div>
-
-      </section>
-
-    );
-  }
+  );
 }
 
 export default Home;
