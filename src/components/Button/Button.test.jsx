@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-// import userEvent from '@testing-library/user-event';
 import { Button } from '.';
 
 describe('<Button />', () => {
@@ -8,7 +7,7 @@ describe('<Button />', () => {
     render(<Button text="load more" disabled={false} onClick={fn} />);
 
     const button = screen.getByRole('button', { name: /load more/i });
-    expect(button).toBeInTheDocument('class', 'button');
+    expect(button).toBeInTheDocument();
   });
 
   // it('is should call the Button function', () => {
@@ -17,7 +16,8 @@ describe('<Button />', () => {
 
   //   const button = screen.getByRole('button', { name: /load more/i });
 
-  //   userEvent.click(button);
+  //   fireEvent.click(button);
+  //   fireEvent.click(button);
 
   //   expect(fn).toHaveBeenCalled();
   // });
